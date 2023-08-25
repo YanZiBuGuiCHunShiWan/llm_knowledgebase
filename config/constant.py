@@ -12,7 +12,7 @@ __all__=[
 url = 'https://api.openai-sb.com/v1/chat/completions'
 headers = {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer sb-82b14c3f5c0aa16b295c9d81ad1e465af920edf0245a4d51'
+    'Authorization': 'Bearer your-api key'
     }
 
 DOCUMENT_PATH="data/financial_research_reports"
