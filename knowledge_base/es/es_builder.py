@@ -6,8 +6,9 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 import ssl
 from config.constant import ElasticsearchConfig
+from tqdm import tqdm
 
-class Elasticsearch_Builder():
+class ElasticsearchScholar():
     
     def __init__(self,elastic_config:ElasticsearchConfig):
         '''
@@ -30,9 +31,10 @@ class Elasticsearch_Builder():
         
     def __check_index(self,index_name:str):
         if not self.es.indices.exists(index=index_name):
-                raise KeyError("该索引不存在")
+                logger.info("该索引不存在")
     
     def add_text(self,doc_lists:List[Document],index_name:str):
+        logger.info("elastic search start adding text.........")
         custom_mapping={
             "mappings":{
                 "news_type":{
@@ -53,7 +55,7 @@ class Elasticsearch_Builder():
         else:
             current_indices_nums=self.es.count(index=index_name)["count"]
         Actions=[]
-        for index,content in enumerate(doc_lists):
+        for index,content in tqdm(enumerate(doc_lists),total=len(doc_lists)):
             action={
                 "_index":index_name,
                 "_type":"text_contents",
@@ -63,7 +65,7 @@ class Elasticsearch_Builder():
                 }
             }
             Actions.append(action)
-            
+        
         success,_=bulk(self.es,Actions,index=index_name,raise_on_error=True)
         logger.info("Index :{} perform {} actions".format(index_name,success))
         
@@ -91,12 +93,15 @@ class Elasticsearch_Builder():
             if index.startswith("knowledge-"):
                 valid_indices.append({index:self.es.count(index=index)["count"]})
         print(valid_indices)
-            
+        return  valid_indices
     
     def drop_index(self,drop_index_name):
         self.es.indices.delete(index=drop_index_name,ignore=[400,404])
-        logger.info("删除操作执行完毕。")
+        logger.info("删除索引操作执行完毕。")
         
+    def delete_text(self,doc_index:int,index_name:str):
+        self.es.delete(index=index_name,id=doc_index)
+        logger.info("elastic search:索引 {} 删除文本操作执行成功".format(index_name))
     
 if __name__=="__main__":
     docs_path="data/financial_research_reports/"
@@ -112,7 +117,7 @@ if __name__=="__main__":
         docs.append(Document(page_content=''.join(f.read().split()), metadata={"source": f'doc_id_{doc}'}))
     content_text=[doc.page_content for doc in docs]
     es_config=ElasticsearchConfig()
-    es_server=Elasticsearch_Builder(es_config)
+    es_server=ElasticsearchScholar(es_config)
     #es_server.add_text(content_text,es_config.index_name)
     #es_server.show_current_index()
     es_server.drop_index("knowledge-financial")

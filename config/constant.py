@@ -9,10 +9,10 @@ __all__=[
 ]
 
 
-url = 'https://api.openai-sb.com/v1/chat/completions'
-headers = {
+URL= 'https://api.openai-sb.com/v1/chat/completions'
+HEADERS = {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer your-api key'
+    'Authorization': 'Bearer sb-82b14c3f5c0aa16b295c9d81ad1e465af920edf0245a4d51'
     }
 
 DOCUMENT_PATH="data/financial_research_reports"
@@ -25,7 +25,7 @@ PROMPT_TEMPLATE = """【指令】根据已知信息，简洁和专业的来回�
 
 【问题】{question}"""
 
-class VectorConfig:
+class FaissVectorConfig:
     '''
     '''
     embedding_model_name_or_path="/data/text2vec-base-chinese"
@@ -33,6 +33,15 @@ class VectorConfig:
     vector_load_path="dump/financialfaiss"
     document_path="data/finalcial_research_reports"
     device="cuda:1"
+    
+class LancdbVectorConfig:
+    '''
+    '''
+    embedding_model_name_or_path="/data/text2vec-base-chinese"
+    document_path="data/finalcial_research_reports"
+    device="cuda:1"
+    table_name="knowlegde-finance"
+    
 
 class ElasticsearchConfig:
     '''

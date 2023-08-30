@@ -7,15 +7,16 @@ from modelscope.pipelines import pipeline
 
 class CustomTextSplitter:    
     def __init__(self):
-        self.docs=[]
+        pass
         
     def load_documents(self,doc_path,suffix:str="*.txt")->List[Document]:
+        docs=[]
         files=glob.glob(doc_path+"/"+suffix)
         for file in files:
-            self.docs.append(TextLoader(file).load()[0])
-        return self.docs
+            docs.append(TextLoader(file).load()[0])
+        return docs
     
-    def recursive_charactor_split(self,chunk_size: int,chunk_overlap: int,length_func:len,add_start_index:True):
+    def recursive_charactor_split(self,docs:List[Document],chunk_size: int,chunk_overlap: int,length_func:len,add_start_index:True)->List[Document]:
         '''
         By default the characters it tries to split on are ["\n\n", "\n", " ", ""]
         length_function: how the length of chunks is calculated. Defaults to just counting number of characters, but it's pretty common to pass a token counter here
@@ -29,7 +30,7 @@ class CustomTextSplitter:
                 length_function = length_func,
                 add_start_index = add_start_index,
             )
-        splitted_texts=textsplitter.split_documents(self.docs)
+        splitted_texts=textsplitter.split_documents(docs)
         return splitted_texts
     
     def semantic_split(self,text:str):
@@ -39,7 +40,6 @@ class CustomTextSplitter:
             device="cuda:1")
         result = p(documents=text)
         sent_list = [i for i in result["text"].split("\n\t") if i]
-        
         return sent_list
     
 if __name__=="__main__":
