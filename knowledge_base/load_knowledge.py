@@ -14,12 +14,12 @@ from langchain.vectorstores import FAISS
 class CustomKnowledgeManager(BaseKnowledgeManager):
     
     @timer_decorator
-    def Load_Faiss_knowledge(self,data_path):
-        assert type(self.vec_scholar)==FaissVectorScholar,"向量库不为Faiss"
+    def Load_Faiss_knowledge(self,data_path,index_name):
+        assert type(self.vec_scholar[index_name])==FaissVectorScholar,"向量库不为Faiss"
         try:
-            self.vec_scholar.vecstore=FAISS.load_local(folder_path=self.vec_scholar.vector_config.vector_store_path,
+            self.vec_scholar[index_name].vecstore=FAISS.load_local(folder_path=self.vec_scholar[index_name].vector_config.vector_store_path,
                                                        index_name="index",
-                                                       embeddings=self.vec_scholar.transformer)
+                                                       embeddings=self.vec_scholar[index_name].transformer)
             logger.info("Faiss：加载本地向量库成功。")
         except Exception as  err:
             logger.info("Faiss：加载本地文件失败，为您重新生成")
@@ -31,7 +31,7 @@ class CustomKnowledgeManager(BaseKnowledgeManager):
                                                                         add_start_index=True)
             if len(splitted_chunks)>=100000:
                 logger.warning("分块文档超过十万条，您将会等待很长时间。")
-            self.vec_scholar.embed_and_store(splitted_chunks)
+            self.vec_scholar[index_name].embed_and_store(splitted_chunks)
 
         
     @async_timer_decorator    
@@ -41,7 +41,7 @@ class CustomKnowledgeManager(BaseKnowledgeManager):
             loop = asyncio.get_event_loop()
             tasks = [
                 loop.run_in_executor(None, self.es_scholar.delete_text, doc_id,index_name),
-                loop.run_in_executor(None, self.vec_scholar.delete_text,doc_id)
+                loop.run_in_executor(None, self.vec_scholar[index_name].delete_text,doc_id)
             ]
             await asyncio.wait_for(asyncio.gather(*tasks),timeout=60)
         elif approach=="es":
@@ -51,7 +51,7 @@ class CustomKnowledgeManager(BaseKnowledgeManager):
                                                            index_name)
         else:
             await asyncio.get_event_loop().run_in_executor(None,
-                                                           self.es_scholar.delete_text,
+                                                           self.vec_scholar[index_name].delete_text,
                                                            doc_id)
 
         
@@ -65,7 +65,7 @@ class CustomKnowledgeManager(BaseKnowledgeManager):
             loop = asyncio.get_event_loop()
             tasks = [
                 loop.run_in_executor(None, self.es_scholar.delete_text, text_or_path,index_name),
-                loop.run_in_executor(None, self.vec_scholar.delete_text,text_or_path)
+                loop.run_in_executor(None, self.vec_scholar[index_name].delete_text,text_or_path)
             ]
             await asyncio.wait_for(asyncio.gather(*tasks),timeout=60)
         elif approach=="es":
@@ -75,7 +75,7 @@ class CustomKnowledgeManager(BaseKnowledgeManager):
                                                            index_name)
         else:
             await asyncio.get_event_loop().run_in_executor(None,
-                                                           self.vec_scholar.add_text,
+                                                           self.vec_scholar[index_name].add_text,
                                                            text_or_path)
         
 
@@ -86,7 +86,7 @@ class CustomKnowledgeManager(BaseKnowledgeManager):
             loop = asyncio.get_event_loop()
             tasks = [
             loop.run_in_executor(None,self.es_scholar.text_search,query,topk,index_name),
-            loop.run_in_executor(None,self.vec_scholar.text_search,query,topk)
+            loop.run_in_executor(None,self.vec_scholar[index_name].text_search,query,topk)
             ]
             
             es_result,vec_result = await asyncio.wait_for(asyncio.gather(*tasks),timeout=60)
@@ -102,7 +102,7 @@ class CustomKnowledgeManager(BaseKnowledgeManager):
             result=[page.page_content for page in result]
         else:
             result = await asyncio.get_event_loop().run_in_executor(None,
-                                                                    self.vec_scholar.text_search,
+                                                                    self.vec_scholar[index_name].text_search,
                                                                     query,topk)
             result=[page.page_content for page in result]
         return result
